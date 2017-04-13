@@ -1,0 +1,9 @@
+/Users/yaroslav/Desktop/GA/laba/dotnet/GeneticAlgorithms/GeneticAlgorithms/bin/Debug/netcoreapp1.1/GeneticAlgorithms.deps.json
+/Users/yaroslav/Desktop/GA/laba/dotnet/GeneticAlgorithms/GeneticAlgorithms/bin/Debug/netcoreapp1.1/GeneticAlgorithms.runtimeconfig.json
+/Users/yaroslav/Desktop/GA/laba/dotnet/GeneticAlgorithms/GeneticAlgorithms/bin/Debug/netcoreapp1.1/GeneticAlgorithms.runtimeconfig.dev.json
+/Users/yaroslav/Desktop/GA/laba/dotnet/GeneticAlgorithms/GeneticAlgorithms/bin/Debug/netcoreapp1.1/GeneticAlgorithms.dll
+/Users/yaroslav/Desktop/GA/laba/dotnet/GeneticAlgorithms/GeneticAlgorithms/bin/Debug/netcoreapp1.1/GeneticAlgorithms.pdb
+/Users/yaroslav/Desktop/GA/laba/dotnet/GeneticAlgorithms/GeneticAlgorithms/obj/Debug/netcoreapp1.1/GeneticAlgorithms.csprojResolveAssemblyReference.cache
+/Users/yaroslav/Desktop/GA/laba/dotnet/GeneticAlgorithms/GeneticAlgorithms/obj/Debug/netcoreapp1.1/GeneticAlgorithms.AssemblyInfo.cs
+/Users/yaroslav/Desktop/GA/laba/dotnet/GeneticAlgorithms/GeneticAlgorithms/obj/Debug/netcoreapp1.1/GeneticAlgorithms.dll
+/Users/yaroslav/Desktop/GA/laba/dotnet/GeneticAlgorithms/GeneticAlgorithms/obj/Debug/netcoreapp1.1/GeneticAlgorithms.pdb

@@ -1,0 +1,47 @@
+[
+    {
+        "key"       : "first",
+        "iterations": 4000,
+        "size": 300,
+        "crossover": 0.8,
+        "mutation": 0.1,
+        "GG": 0.1,
+        "CF": 2,
+        "skip": true
+    },
+
+    {
+        "key"        : "second",
+        "iterations": 4000,
+        "size": 300,
+        "crossover": 0.8,
+        "mutation": 0.1,
+        "GG": 0.2,
+        "CF": 3,
+        "skip": false
+        
+    }
+    ,
+    {
+        "key"        : "third",
+        "iterations": 4000,
+        "size": 300,
+        "crossover": 0.8,
+        "mutation": 0.1,
+        "GG": 0.3,
+        "CF": 2,
+        "skip": true
+        
+    },
+    {
+        "key"        : "fourth",
+        "iterations": 4000,
+        "size": 250,
+        "crossover": 0.7,
+        "mutation": 0.2,
+        "GG": 0.2,
+        "CF": 2,
+        "skip": false
+      
+    }
+]

@@ -4,7 +4,7 @@ using static System.Math;
 
 namespace GeneticAlgorithms.Functions
 {
-    public class EqualMaxima : IFunction
+    public class F15 : IFunction
     {
         public override float run(List<float> gens)
         {

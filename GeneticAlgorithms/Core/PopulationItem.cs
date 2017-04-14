@@ -19,7 +19,7 @@ namespace GeneticAlgorithms.Core
 
         public override string ToString ()
         {
-            return Format("[Genome : {0}, Fitness: {1}]", Genom, Fitness);
+            return Format("[Genome : {0} , Fitness: {1}]", Genom, Fitness);
         }
     }
 }

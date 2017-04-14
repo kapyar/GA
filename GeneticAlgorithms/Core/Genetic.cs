@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using GeneticAlgorithms.Crossover;
 using GeneticAlgorithms.Functions;
-using GeneticAlgorithms.Method;
 using GeneticAlgorithms.Selection;
 using GeneticAlgorithms.Statistics;
 
@@ -12,24 +10,23 @@ namespace GeneticAlgorithms.Core
 {
     public class Genetic
     {
-
-        public bool DEBUG = true;
+        public const float EPS   = 0.01f;//0.001 works bad
+        public const bool  DEBUG = true;
         public List<PopulationItem> Entities = new List<PopulationItem>();
 
         private readonly GlobalConfigItem _globalConfig;
         private readonly IFunction        _function;
         private readonly ICrossover       _crossover;
         private readonly ISelection       _selection;
-        private readonly IMethod          _method;
-        private readonly UserData        _userData;
+        private readonly UserData         _userData;
 
-        private readonly Stats  _stats;
         private readonly Random _random;
+        private readonly Stats  _stats;
 
 
 
         public Genetic (GlobalConfigItem globalConfigItem, UserData userData, IFunction func,
-                        ICrossover cross,  ISelection selection, IMethod method
+                        ICrossover cross,  ISelection selection
         )
         {
             _globalConfig = globalConfigItem;
@@ -37,21 +34,18 @@ namespace GeneticAlgorithms.Core
             _crossover    = cross;
             _selection    = selection;
             _userData     = userData;
-            _method       = method;
 
             _stats        = new Stats();
             _random       = new Random();
-
-            Log();
         }
 
 
 
         #region Interface
 
-        public void Start ()
+        public Stats Start (List<PopulationItem> items)
         {
-            Train(CreateFirstGeneration());
+            return Train(items);
         }
 
         public List<PopulationItem> CreateFirstGeneration ()
@@ -75,7 +69,7 @@ namespace GeneticAlgorithms.Core
         private float Fitness(PopulationItem entity)
         {
             List<float> x_params = Utils.Deserialize(_userData.Dimension, entity.Genom);
-            var fitness = _function.run(x_params);
+            var fitness          = _function.run(x_params);
             return fitness;
         }
 
@@ -83,7 +77,7 @@ namespace GeneticAlgorithms.Core
 
 
 
-        private void Train(List<PopulationItem> startPopulation)
+        private Stats Train(List<PopulationItem> startPopulation)
         {
             Entities = startPopulation;
 
@@ -96,134 +90,120 @@ namespace GeneticAlgorithms.Core
                     _stats.IncNfe();
                     popRepresentation.Add(new PopulationItem(entity.Genom, Fitness(entity)));
                 }
-                //optimiz criterial  + - o.Fitness
+
+
                 List<PopulationItem> popSorted =
                     new List<PopulationItem>(popRepresentation.OrderByDescending(o => o.Fitness));
 
 
-//                Console.WriteLine("Desceding: ");
-//                best.ForEach(s => Console.WriteLine(s));
-
-                var max = popSorted.Max(o => o.Fitness);
                 var mean = popSorted.Average(o => o.Fitness);
                 var stdev = Math.Sqrt(popSorted.Average(v => Math.Pow(v.Fitness - mean, 2)));
 
-                Console.WriteLine("Max   :" + max);
-                Console.WriteLine("Mean  :" + mean);
-                Console.WriteLine("Stdev :" + stdev);
+                var iterationStats = new GenerationStatistics(
+                                                              popSorted [0].Fitness,
+                                                              popSorted [popSorted.Count - 1].Fitness,
+                                                              mean,
+                                                              (float) stdev
+                );
 
-                var res = CheckGeneration(popSorted,
-                                          new GenerationStatistics(
-                                                                   popSorted [0].Fitness,
-                                                                   popSorted [popSorted.Count - 1].Fitness,
-                                                                   mean,
-                                                                   (float) stdev));
+                var res = CheckGeneration(iterationStats);
 
 
                 var isFinished = !res || i == _globalConfig.iterations - 1;
 
+
+                //last iteration goes here to show the results
                 if (isFinished)
                 {
+                    if (DEBUG)
+                    {
+//                        Console.WriteLine("==============Best===============");
+//                        foreach (var item in popSorted)
+//                        {
+//                            List<float> floats = Utils.Deserialize(_userData.Dimension, item.Genom);
+//
+//                            foreach (var number in floats)
+//                            {
+//                                Console.Write(number + " ");
+//                            }
+//                            Console.WriteLine();
+//                        }
+                    }
+//                    Console.WriteLine("================End best====================");
+
                     List<PopulationItem> seeds = GetSeeds(popSorted);
 
-                    foreach (var seed in seeds)
+                    if (DEBUG)
                     {
-                        List<float> floats = Utils.Deserialize(_userData.Dimension, seed.Genom);
-
-                        Console.Write(string.Format("[seed :  fitness : {0}", seed.Fitness));
-
-                        foreach (var t in floats)
-                        {
-                            Console.Write(string.Format("{0} ", t));
-                        }
-
-                        Console.Write("]");
-                        Console.WriteLine();
+                        Log(seeds, "Seeds");
+                    }
+                    if (DEBUG)
+                    {
+//                        Console.WriteLine($"Peaks amount: {seeds.Count} ");
                     }
 
+//                    foreach (var seed in seeds)
+//                    {
+//                        List<float> floats = Utils.Deserialize(_userData.Dimension, seed.Genom);
+//
+//                        Console.Write(string.Format("[seed (fitness : {0}): ", seed.Fitness));
+//
+//                        foreach (var t in floats)
+//                        {
+//                            Console.Write(string.Format("{0} ", t));
+//                        }
+//
+//                        Console.Write("]");
+//                        Console.WriteLine();
+//                    }
 
-                    Console.WriteLine("NFE: {0}", _stats.Nfe);
-                    Console.WriteLine($"Peaks amount: {seeds.Count}");
-
-                    if (_userData.Config.Peaks != 0)
-                    {
-                        Console.WriteLine(
-                                          "Effective number: " +
-                                          seeds.Count * 1.0f / Math.Pow(_userData.Config.Peaks, _userData.Dimension));
-                    }
-                    else
-                    {
-                        Console.WriteLine("Effective number: 0");
-                    }
+                    _stats.NumberOfPeaks = seeds.Count;
 
                     CalculatePeakAndDistanceAccuracy(seeds);
-                    break;
+
+                    return _stats;
                 }
 
-                var GapIndex = (int) (_globalConfig.size * _globalConfig.GG);
 
-                Console.WriteLine($"GapIndex :{GapIndex}");
-
-
-                // todo check whether copy is really needed
-                List<PopulationItem> newPop = popSorted.Select(item => new PopulationItem(item.Genom, item.Fitness))
-                                                      .ToList();
+                List<PopulationItem> offspring = new List<PopulationItem>();
 
 
-                List<PopulationItem> BestPart  = newPop.GetRange(0, GapIndex);
-                List<PopulationItem> Offspring = new List<PopulationItem>();
+                //cant be more than start population
 
-
-                foreach (var item in BestPart)
+                while (offspring.Count < popSorted.Count)
                 {
                     if ((float) _random.NextDouble() < _globalConfig.crossover)
                     {
-
-                        List<PopulationItem> parents = _selection.SelectTwo(BestPart);
+                        List<PopulationItem> parents = _selection.SelectTwo(popSorted);
                         List<PopulationItem> crossover;
 
                         do {
                             crossover = _crossover.Crossover(parents[0], parents[1]);
                         } while (!CheckInRange(crossover[0].Genom) || !CheckInRange(crossover[1].Genom));
 
-
                         foreach (var cross in crossover)
                         {
-                            Offspring.Add(MutateOrNot(cross));
+                            if(offspring.Count>=popSorted.Count) break;
+                            offspring.Add(MutateOrNot(cross));
                         }
 
                     } else {
-                        Offspring.Add(MutateOrNot(_selection.SelectOne(BestPart)));
+                        offspring.Add(MutateOrNot(_selection.SelectOne(popSorted)));
                     }
                 }
-                    /*  TODO    : my algorithm goes here
-                        @author : (kaplya)
-                        @date   : 4/13/17
-                    */
-                foreach (var t in Offspring)
-                {
-                    var toChangePos    = _method.GetPositions(_globalConfig.CF, newPop.Count);
-                    var maxSimilarity  = HammingDistance(newPop[toChangePos[0]].Genom, t.Genom);
-                    var mostSimilarPos = toChangePos[0];
 
-                    for (var j = 0; j < _globalConfig.CF; j++)
-                    {
-                        if (HammingDistance(newPop[toChangePos[j]].Genom, t.Genom) < maxSimilarity) {
-                            mostSimilarPos = toChangePos[j];
-                        }
-                    }
-                    newPop.Insert(mostSimilarPos, t);
-                }
-
-                Entities = newPop;
+                Entities = new List<PopulationItem>(offspring.Select(s => new PopulationItem(s.Genom)));
             }
+
+            return _stats;
         }
 
 
 
         #region Utils
 
-        private bool CheckGeneration(List<PopulationItem> pop, GenerationStatistics stats) {
+        private bool CheckGeneration(GenerationStatistics stats)
+        {
             // stop running once we've reached the solution
             if (Math.Abs(_stats.PreviousMean - stats.Mean) < 0.0001) {
                 _stats.IncMeanCounter();
@@ -239,21 +219,27 @@ namespace GeneticAlgorithms.Core
             return new PopulationItem(Utils.Serialize(_userData.Dimension, _userData.Config.Min, _userData.Config.Max));
         }
 
-        private List<PopulationItem> GetSeeds(List<PopulationItem> pop) {
-
+        private List<PopulationItem> GetSeeds(List<PopulationItem> popSorted)
+        {
             List<PopulationItem> seeds = new List<PopulationItem>();
 
-
-            foreach (var item in pop)
+            foreach (var item in popSorted)
             {
-                var found = seeds.Select(seed => GetEuklidianDistance(item, seed)).Any(distance => distance <= 0.01f);
+                bool found = false;
+                foreach (var seed in seeds)
+                {
+                    float dist = GetEuklidianDistance(item, seed);
+                    if (dist < EPS)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
 
                 if (!found)
                 {
                     seeds.Add(item);
                 }
-
-                return seeds;
 
             }
 
@@ -261,7 +247,8 @@ namespace GeneticAlgorithms.Core
         }
 
 
-        private float GetEuklidianDistance(PopulationItem i1, PopulationItem i2) {
+        private float GetEuklidianDistance(PopulationItem i1, PopulationItem i2)
+        {
             List<float> p1 = Utils.Deserialize(_userData.Dimension, i1.Genom);
             List<float> p2 = Utils.Deserialize(_userData.Dimension, i2.Genom);
 
@@ -315,13 +302,14 @@ namespace GeneticAlgorithms.Core
                 res = genom.Substring(0, index) + mutation + genom.Substring(index + 1);
             } while (!CheckInRange(res));
 
-            return new PopulationItem(res);
+            return new PopulationItem(res, _function.run(Utils.Deserialize(_userData.Dimension, res)));
         }
 
         // todo create args for dimensions
         private void CalculatePeakAndDistanceAccuracy(List<PopulationItem> seeds)
         {
-            if (_userData.Config.Peaks != 0) {
+            if (_userData.Config.Peaks != 0)
+            {
                 float peakAccuracy = 0f;
                 float distAccuracy = 0f;
                 var args = GenerateArgs(_userData.Config.Optimus, _userData.Dimension);
@@ -334,24 +322,34 @@ namespace GeneticAlgorithms.Core
                     List<float> nearest = Utils.Deserialize(_userData.Dimension, nearestSeed.Genom);
                     peakAccuracy += Math.Abs(_function.run(opt) - nearestSeed.Fitness);
                     distAccuracy += GetEuklidianDistance(opt, nearest);
-                if (DEBUG)
-                {
-                    Console.Write("nearest: ");
-                    foreach (var v in opt)
-                    {
-                        Console.Write(v + " ");
-                    }
-                    Console.Write(" : ");
 
-                    foreach (var v in nearest)
+                    if (DEBUG)
                     {
-                        Console.Write(v + " ");
+                        Console.Write("nearest: ");
+                        foreach (var v in opt)
+                        {
+                            Console.Write(v + " ");
+                        }
+
+                        Console.Write(" : ");
+
+                        foreach (var v in nearest)
+                        {
+                            Console.Write(v + " ");
+                        }
+
+                        Console.WriteLine();
                     }
-                    Console.WriteLine();
+
+                    _stats.KnownNumberOfPeaks = _userData.Config.Peaks;
+
                 }
-                }
-                Console.WriteLine("Peak peakAccuracy: " + peakAccuracy);
-                Console.WriteLine("Dist peakAccuracy: " + distAccuracy);
+
+                _stats.PeakAcuracy     = peakAccuracy;
+                _stats.DistanceAcuracy = distAccuracy;
+
+//                Console.WriteLine("Peak peakAccuracy: " + peakAccuracy);
+//                Console.WriteLine("Dist peakAccuracy: " + distAccuracy);
             }
         }
 
@@ -396,10 +394,31 @@ namespace GeneticAlgorithms.Core
 
         #region Debug
 
-        [Conditional("DEBUG")]
-        private void Log ()
+//        [Conditional("DEBUG")]
+//        private void Log ()
+//        {
+//            Console.WriteLine(_function);
+//        }
+
+
+        private void Log (List<PopulationItem> list, string title="")
         {
-            Console.WriteLine(_function);
+            Console.WriteLine($"==========={title}==============");
+
+            if (DEBUG)
+            {
+                Console.WriteLine($"\t\t\tGenome\t\t\t\t\tValue\t\t\t\tFitness\t\t\t Count={list.Count}");
+                foreach (var item in list)
+                {
+                    Console.Write($"{item.Genom}\t");
+                    Utils.Deserialize(_userData.Dimension, item.Genom).ForEach(s=> Console.Write($" {s}"));
+                    Console.Write($"\t\t\t\t\t{item.Fitness}");
+                    Console.WriteLine();
+                }
+            }
+
+            Console.WriteLine("===========END============");
+            Console.WriteLine();
         }
 
         #endregion

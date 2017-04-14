@@ -1,5 +1,9 @@
 ﻿namespace GeneticAlgorithms.Statistics
 {
+    /// <summary>
+    /// Use for internal usage to know when we need to stop changing our
+    /// algorithm to modify populations
+    /// </summary>
     public class GenerationStatistics {
 
         public float Min   { get; }

@@ -8,14 +8,13 @@ namespace GeneticAlgorithms.Functions
         public float Max;
 
         public List<float> Optimus;
-        public int Peaks;
+        public int Peaks => Optimus?.Count ?? 0;
 
-        public FunctionConfig (float min, float max, List<float> optimus = null, int peaks = 0)
+        public FunctionConfig (float min, float max, List<float> optimus = null)
         {
             Min = min;
             Max = max;
             Optimus = optimus;
-            Peaks = peaks;
         }
     }
 }

@@ -5,21 +5,6 @@ namespace GeneticAlgorithms
 {
     public class Config
     {
-        public enum Coding
-        {
-            binary, grey
-        }
-
-        public enum Cross
-        {
-            one, many
-        }
-
-        public enum Mutation
-        {
-            one, many
-        }
-
         private static ConfigDataHolder _data;
 
         static Config ()
